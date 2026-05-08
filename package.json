@@ -1,0 +1,36 @@
+{
+  "name": "bangauth",
+  "version": "0.1.0",
+  "description": "Embeddable identity provider — email, MFA, JWT. Bang, you're in!",
+  "author": "William Fredricks",
+  "license": "Apache-2.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wfredricks/bangauth.git"
+  },
+  "keywords": [
+    "auth",
+    "authentication",
+    "identity",
+    "mfa",
+    "totp",
+    "jwt",
+    "email-auth",
+    "passwordless",
+    "embeddable",
+    "government",
+    "fedramp"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "tsup src/index.ts --format esm,cjs --dts"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.2",
+    "tsup": "^8.0.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
+  }
+}

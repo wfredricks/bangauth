@@ -1,0 +1,22 @@
+{
+  "name": "udt-idp",
+  "version": "1.0.0",
+  "description": "UDT Identity Provider — Serverless IdP for constellation access",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/handlers/*.ts --bundle --platform=node --target=node20 --outdir=dist --format=esm --external:@aws-sdk/*",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@aws-sdk/client-sesv2": "^3.1039.0",
+    "@aws-sdk/client-ssm": "^3.1039.0",
+    "@aws-sdk/client-secrets-manager": "^3.1039.0",
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
