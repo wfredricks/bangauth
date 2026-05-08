@@ -1,8 +1,5 @@
 /**
  * Token Engine Tests — core auth logic
- *
- * Tests the pure functions: HMAC signing, base64url encoding,
- * token generation, verification, month rotation.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -15,6 +12,7 @@ import {
   generateToken,
   verifyToken,
 } from '../token.js';
+import { createTestKey, MemoryKeyStore } from '../adapters/memory-key-store.js';
 
 describe('Token Engine', () => {
 
@@ -70,40 +68,45 @@ describe('Token Engine', () => {
   });
 
   describe('token generation + verification', () => {
-    const secret = 'test-secret-key-at-least-32-chars-long!!';
+    const key = createTestKey('k-test-token');
+    const keyStore = new MemoryKeyStore(key);
+    const month = currentMonth();
+    const constellationId = 'test-constellation';
 
-    it('generates a token that can be verified', () => {
-      const token = generateToken('alice@test.com', secret);
+    it('generates a token that can be verified', async () => {
+      const token = generateToken('alice@test.com', month, key, constellationId);
       expect(token).toBeDefined();
       expect(token.length).toBeGreaterThan(10);
 
-      const result = verifyToken(token, secret);
+      const result = await verifyToken(token, keyStore);
       expect(result.valid).toBe(true);
       expect(result.email).toBe('alice@test.com');
     });
 
-    it('rejects tampered tokens', () => {
-      const token = generateToken('alice@test.com', secret);
+    it('rejects tampered tokens', async () => {
+      const token = generateToken('alice@test.com', month, key, constellationId);
       const tampered = token.slice(0, -5) + 'XXXXX';
-      const result = verifyToken(tampered, secret);
+      const result = await verifyToken(tampered, keyStore);
       expect(result.valid).toBe(false);
     });
 
-    it('rejects tokens with wrong secret', () => {
-      const token = generateToken('alice@test.com', secret);
-      const result = verifyToken(token, 'wrong-secret-key-also-32-chars!!');
+    it('rejects tokens with wrong key store', async () => {
+      const token = generateToken('alice@test.com', month, key, constellationId);
+      const otherKey = createTestKey('k-other');
+      const otherStore = new MemoryKeyStore(otherKey);
+      const result = await verifyToken(token, otherStore);
       expect(result.valid).toBe(false);
     });
 
-    it('tokens are deterministic for same email + month', () => {
-      const t1 = generateToken('alice@test.com', secret);
-      const t2 = generateToken('alice@test.com', secret);
+    it('tokens are deterministic for same email + month + key', () => {
+      const t1 = generateToken('alice@test.com', month, key, constellationId);
+      const t2 = generateToken('alice@test.com', month, key, constellationId);
       expect(t1).toBe(t2);
     });
 
     it('different emails produce different tokens', () => {
-      const t1 = generateToken('alice@test.com', secret);
-      const t2 = generateToken('bob@test.com', secret);
+      const t1 = generateToken('alice@test.com', month, key, constellationId);
+      const t2 = generateToken('bob@test.com', month, key, constellationId);
       expect(t1).not.toBe(t2);
     });
   });
