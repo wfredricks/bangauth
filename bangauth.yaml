@@ -1,0 +1,75 @@
+# BangAuth Configuration — Constellation MVP
+#
+# This is an example configuration for running BangAuth as a standalone HTTP
+# service in a Docker constellation. For the MVP, we use console email adapter,
+# in-memory key store, and in-memory user store. In production, you'd swap
+# these for SES, Secrets Manager, and DynamoDB.
+#
+# Environment variable overrides:
+#   BANGAUTH_APP_NAME, BANGAUTH_APP_ID, BANGAUTH_ALLOWED_DOMAINS,
+#   BANGAUTH_MFA_POLICY, BANGAUTH_MFA_ISSUER, BANGAUTH_PORT, NATS_URL
+
+# Application identity
+app:
+  id: credence-twin-standard
+  name: Credence Twin Standard
+
+# Authentication settings
+auth:
+  # Allowed email domains — use '*' to allow any domain (dev mode)
+  # In production, specify exact domains: ['dla.mil', 'credence-llc.com']
+  allowedDomains:
+    - '*'
+
+  # Token rotation period — monthly is standard
+  codeRotation: monthly
+
+  # JWT time-to-live in seconds (24 hours)
+  tokenTTL: 86400
+
+# Multi-factor authentication
+mfa:
+  # Policy: 'required' (all users), 'optional' (user choice), 'off' (disabled)
+  # For dev/demo, use 'off' to skip MFA
+  policy: off
+
+  # Issuer name shown in authenticator apps
+  issuer: Credence Twin Standard
+
+  # Max TOTP verification attempts before lockout
+  maxAttempts: 5
+
+# Email delivery
+email:
+  # Provider: 'console' (dev), 'ses' (AWS), 'smtp' (generic), 'sendgrid'
+  provider: console
+
+  # Sender identity
+  fromAddress: noreply@bangauth.dev
+  fromName: Credence Twin Auth
+
+  # SES-specific (unused in console mode)
+  # sesDomain: bangauth.dev
+
+# Signing keys
+keys:
+  # Provider: 'memory' (dev), 'secrets-manager' (AWS), 'env', 'file'
+  provider: memory
+
+  # Key rotation schedule
+  rotationSchedule: monthly
+
+  # HMAC algorithm
+  algorithm: HS256
+
+# Deployment
+deployment:
+  # HTTP server port
+  port: 3000
+
+  # NATS URL for event publishing (optional)
+  # If not set, events are disabled
+  natsUrl: nats://localhost:4222
+
+  # AWS region (for SES, Secrets Manager, DynamoDB in production)
+  # region: us-east-1
