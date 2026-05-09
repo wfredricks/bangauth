@@ -1,0 +1,22 @@
+# BangAuth — Docker Ignore
+#
+# Exclude unnecessary files from Docker build context to speed up builds
+# and reduce image size.
+
+node_modules
+npm-debug.log
+.git
+.github
+.gitignore
+*.md
+docs/
+tests/
+__tests__/
+*.test.ts
+*.spec.ts
+.env
+.env.*
+dist/
+coverage/
+.DS_Store
+Thumbs.db
