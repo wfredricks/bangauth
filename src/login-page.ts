@@ -378,23 +378,54 @@ export function buildLoginPage(appName: string, apiBaseUrl: string, redirectUrl:
 
         if (res.ok && data.authenticated) {
           if (data.mfaRequired) {
-            // MFA is required — move to MFA step
-            mfaSessionToken = data.mfaSessionToken;
-            showMessage('MFA required. Enter your authenticator code.', 'info');
-            setTimeout(() => showStep('mfa'), 1500);
+            if (data.mfaChallenge === 'enroll') {
+              // First time — need to enroll in MFA
+              showMessage('Setting up two-factor authentication...', 'info');
+              try {
+                const enrollRes = await fetch(\`\${API_BASE}/auth/mfa/enroll\`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email: currentEmail }),
+                });
+                const enrollData = await enrollRes.json();
+                if (enrollRes.ok) {
+                  // Show QR code info
+                  showMessage('Scan this QR code with your authenticator app, then enter the 6-digit code below.', 'info');
+                  // Create a simple QR display
+                  const qrDiv = document.createElement('div');
+                  qrDiv.style.cssText = 'text-align:center;margin:16px 0;padding:16px;background:#f8f9fa;border-radius:8px;';
+                  qrDiv.innerHTML = '<p style="font-size:12px;color:#666;margin-bottom:8px">Manual entry key:</p>' +
+                    '<code style="font-size:14px;font-weight:bold;color:#333;word-break:break-all">' + enrollData.secret + '</code>' +
+                    '<p style="font-size:11px;color:#999;margin-top:8px">Or scan: <a href="' + enrollData.qrUri + '" target="_blank">Open QR</a></p>';
+                  steps.mfa.insertBefore(qrDiv, forms.mfa);
+                  mfaSessionToken = ''; // Will get from verify-code with a fresh call
+                  // Re-verify code to get mfaSessionToken
+                  const reVerify = await fetch(\`\${API_BASE}/auth/verify-code\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: currentEmail, code }),
+                  });
+                  const reData = await reVerify.json();
+                  if (reData.mfaSessionToken) mfaSessionToken = reData.mfaSessionToken;
+                  showStep('mfa');
+                }
+              } catch (err) {
+                showMessage('Failed to start MFA enrollment', 'error');
+              }
+            } else {
+              // Already enrolled — just need TOTP code
+              mfaSessionToken = data.mfaSessionToken;
+              showMessage('Enter your authenticator code.', 'info');
+              setTimeout(() => showStep('mfa'), 500);
+            }
           } else {
             // Success — no MFA needed
             showMessage(\`Welcome, \${data.email}! Redirecting...\`, 'success');
-            // Redirect to Twin UI with JWT + user info in URL params
-            // The UI will pick these up and store in its own localStorage
+            if (data.jwt) localStorage.setItem('bangauth-jwt', data.jwt);
+            if (data.email) localStorage.setItem('bangauth-email', data.email);
+            if (data.twinId) localStorage.setItem('bangauth-twinId', data.twinId);
             setTimeout(() => {
-              const redirectUrl = REDIRECT_URL || '/';
-              const params = new URLSearchParams({
-                jwt: data.jwt || '',
-                email: data.email || '',
-                twinId: data.twinId || '',
-              });
-              window.location.href = \`\${redirectUrl}?\${params.toString()}\`;
+              window.location.href = REDIRECT_URL || '/';
             }, 1000);
           }
         } else {
@@ -428,10 +459,16 @@ export function buildLoginPage(appName: string, apiBaseUrl: string, redirectUrl:
 
         if (res.ok && data.mfaVerified) {
           showMessage(\`Welcome, \${data.email}!\`, 'success');
-          // In production, redirect to the app or set a cookie
+          // Store auth data and redirect
+          if (data.jwt) localStorage.setItem('bangauth-jwt', data.jwt);
+          if (data.email) localStorage.setItem('bangauth-email', data.email);
+          if (data.twinId) localStorage.setItem('bangauth-twinId', data.twinId);
+          if (data.recoveryCodes) {
+            alert('Save your recovery codes:\\n\\n' + data.recoveryCodes.join('\\n'));
+          }
           setTimeout(() => {
-            window.location.href = '/';
-          }, 2000);
+            window.location.href = REDIRECT_URL || '/';
+          }, 1000);
         } else {
           showMessage(data.reason || 'Invalid MFA code', 'error');
           if (data.mfaSessionToken) {
