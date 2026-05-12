@@ -1,6 +1,6 @@
 {
   "name": "bangauth",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Embeddable identity provider \u2014 email, MFA, JWT. Bang, you're in!",
   "author": "William Fredricks",
   "license": "Apache-2.0",
