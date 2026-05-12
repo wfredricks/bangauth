@@ -52,6 +52,30 @@ let kidCachedAt = 0;
 /** Cached signing keys by kid. */
 const keyCache = new Map<string, { key: SigningKey; cachedAt: number }>();
 
+// ─── SSM Prefix Helper ─────────────────────────────────────────────────────
+
+/**
+ * Returns the SSM parameter prefix as a path that ends with a `/`.
+ *
+ * // Why: BangAuth was extracted from a UDT deployment that used the
+ * // `/udt/idp/` SSM prefix. New adopters set `BANGAUTH_SSM_PREFIX` (e.g.
+ * // `/myapp/auth/`) to point at their own parameter tree. The default keeps
+ * // the original layout so existing deployments don't break on upgrade.
+ */
+export function ssmPrefix(): string {
+  const raw = process.env.BANGAUTH_SSM_PREFIX || '/udt/idp/';
+  return raw.endsWith('/') ? raw : `${raw}/`;
+}
+
+/**
+ * Returns the Secrets Manager prefix for signing-key storage.
+ *
+ * // Why: Same story as `ssmPrefix`. The convention is `${ssmPrefix}keys/{kid}`.
+ */
+export function secretsPrefix(): string {
+  return `${ssmPrefix()}keys/`;
+}
+
 // ─── SSM Helpers ─────────────────────────────────────────────────────────────
 
 /**
@@ -60,7 +84,9 @@ const keyCache = new Map<string, { key: SigningKey; cachedAt: number }>();
  * // Why: Thin wrapper that handles the AWS SDK ceremony. Each SSM parameter
  * // is a simple string — we parse/split as needed at the caller level.
  *
- * @param path - The SSM parameter path (e.g., "/udt/idp/allowedDomains").
+ * @param path - The SSM parameter path (constructed via `ssmPrefix()`).
+ *               Defaults preserve the legacy `/udt/idp/` layout; override with
+ *               the `BANGAUTH_SSM_PREFIX` environment variable.
  * @returns The parameter value string.
  * @throws If the parameter doesn't exist or can't be read.
  */
@@ -104,15 +130,20 @@ export async function loadConfig(): Promise<IdPConfig> {
     loginUrl,
     mfaPolicy,
     mfaIssuer,
+    supportEmail,
   ] = await Promise.all([
-    getParam('/udt/idp/allowedDomains'),
-    getParam('/udt/idp/constellationId'),
-    getParam('/udt/idp/animatorUrl'),
-    getParam('/udt/idp/ses/fromAddress'),
-    getParam('/udt/idp/ses/fromName'),
-    getParam('/udt/idp/loginUrl'),
-    getParam('/udt/idp/mfaPolicy').catch(() => 'optional'),
-    getParam('/udt/idp/mfaIssuer').catch(() => ''),
+    // SSM prefix is configurable via BANGAUTH_SSM_PREFIX. Default keeps
+    // the original UDT layout for backwards-compat with deployments that
+    // already use it; new adopters set their own prefix.
+    getParam(`${ssmPrefix()}allowedDomains`),
+    getParam(`${ssmPrefix()}constellationId`),
+    getParam(`${ssmPrefix()}animatorUrl`),
+    getParam(`${ssmPrefix()}ses/fromAddress`),
+    getParam(`${ssmPrefix()}ses/fromName`),
+    getParam(`${ssmPrefix()}loginUrl`),
+    getParam(`${ssmPrefix()}mfaPolicy`).catch(() => 'optional'),
+    getParam(`${ssmPrefix()}mfaIssuer`).catch(() => ''),
+    getParam(`${ssmPrefix()}supportEmail`).catch(() => process.env.BANGAUTH_SUPPORT_EMAIL || ''),
   ]);
 
   // Why: Default mfaIssuer to constellationId if not explicitly set.
@@ -128,6 +159,7 @@ export async function loadConfig(): Promise<IdPConfig> {
     loginUrl,
     mfaPolicy: mfaPolicy as 'required' | 'optional' | 'off',
     mfaIssuer: resolvedMfaIssuer,
+    supportEmail,
   };
   configCachedAt = now;
 
@@ -155,7 +187,7 @@ async function fetchKey(kid: string): Promise<SigningKey | null> {
 
   try {
     const result = await secrets.send(
-      new GetSecretValueCommand({ SecretId: `/udt/idp/keys/${kid}` }),
+      new GetSecretValueCommand({ SecretId: `${secretsPrefix()}${kid}` }),
     );
     if (!result.SecretString) return null;
 
@@ -188,7 +220,7 @@ async function getCurrentKid(): Promise<string> {
     return cachedCurrentKid;
   }
 
-  cachedCurrentKid = await getParam('/udt/idp/currentKid');
+  cachedCurrentKid = await getParam(`${ssmPrefix()}currentKid`);
   kidCachedAt = now;
   return cachedCurrentKid;
 }
@@ -221,7 +253,7 @@ export function createKeyStore(): KeyStore {
       // This is called rarely (GET /idp/keys) so the extra API calls are acceptable.
       const listResult = await secrets.send(
         new ListSecretsCommand({
-          Filters: [{ Key: 'name', Values: ['/udt/idp/keys/'] }],
+          Filters: [{ Key: 'name', Values: [secretsPrefix()] }],
         }),
       );
 
@@ -229,7 +261,7 @@ export function createKeyStore(): KeyStore {
       const secretNames = listResult.SecretList?.map((s) => s.Name).filter(Boolean) ?? [];
 
       for (const name of secretNames) {
-        // Extract kid from secret name: "/udt/idp/keys/k-2026-05" → "k-2026-05"
+        // Extract kid from secret name: "${secretsPrefix()}k-2026-05" → "k-2026-05"
         const kid = name!.split('/').pop()!;
         const key = await fetchKey(kid);
         if (key?.active) {

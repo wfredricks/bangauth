@@ -49,7 +49,9 @@ export class ConsoleEmailAdapter {
     console.log(`Subject: ${params.constellationName} — Access Request`);
     console.log('───────────────────────────────────────────────────────────');
     console.log('Your email domain is not authorized for this constellation.');
-    console.log('Contact: auth-support@udt-credence.ai');
+    if (params.supportEmail) {
+      console.log(`Contact: ${params.supportEmail}`);
+    }
     console.log('═══════════════════════════════════════════════════════════\n');
   }
 

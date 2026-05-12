@@ -31,8 +31,8 @@
  *
  * @example
  * ```typescript
- * deriveTwinId('wfredricks@credence-llc.com');
- * // → "wfredricks-credence-llc-com-personal"
+ * deriveTwinId('alice@acme.com');
+ * // → "alice-acme-com-personal"
  *
  * deriveTwinId('chen.maria@dla.mil');
  * // → "chen-maria-dla-mil-personal"

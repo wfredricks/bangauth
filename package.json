@@ -1,7 +1,7 @@
 {
   "name": "bangauth",
   "version": "0.1.0",
-  "description": "Embeddable identity provider — email, MFA, JWT. Bang, you're in!",
+  "description": "Embeddable identity provider \u2014 email, MFA, JWT. Bang, you're in!",
   "author": "William Fredricks",
   "license": "Apache-2.0",
   "type": "module",
@@ -27,7 +27,9 @@
     "test:watch": "vitest",
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "dev": "tsx watch src/server.ts",
-    "start": "tsx src/server.ts"
+    "start": "tsx src/server.ts",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.2",
@@ -41,5 +43,26 @@
     "tsup": "^8.0.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5"
-  }
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./server": "./src/server.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src",
+    "Dockerfile",
+    "bangauth.yaml",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ]
 }

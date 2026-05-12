@@ -85,6 +85,7 @@ export async function handler(event: SESEvent): Promise<void> {
           fromAddress: config.sesFromAddress,
           fromName: config.sesFromName,
           constellationName: config.constellationId,
+          supportEmail: config.supportEmail,
         });
         continue;
       }

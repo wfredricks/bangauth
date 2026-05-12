@@ -21,7 +21,7 @@
  *
  * @example
  * ```typescript
- * isDomainAllowed('chen.maria@dla.mil', ['dla.mil', 'credence-llc.com']); // true
+ * isDomainAllowed('alice@acme.com', ['acme.com', 'partner.org']); // true
  * isDomainAllowed('random@gmail.com', ['dla.mil']);                        // false
  * isDomainAllowed('anyone@anything.com', ['*']);                           // true
  * ```
@@ -38,7 +38,7 @@ export function isDomainAllowed(email: string, allowedDomains: string[]): boolea
   if (!domain) return false;
 
   // Why: Support three matching patterns:
-  //   1. Exact match: "credence-llc.com" matches only credence-llc.com
+  //   1. Exact match: "acme.com" matches only acme.com
   //   2. Suffix wildcard: "*.mil" matches anything ending in .mil (dla.mil, navy.mil, etc.)
   //   3. Contains wildcard: "*credence*" matches any domain containing "credence"
   //   4. Full wildcard: "*" matches everything (handled above)

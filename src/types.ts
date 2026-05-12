@@ -100,13 +100,13 @@ export type VerifyResult =
  * // without redeploying Lambda code. The 5-minute cache keeps costs down.
  */
 export interface IdPConfig {
-  /** Domains allowed to request tokens (e.g., ["dla.mil", "credence-llc.com"]). */
+  /** Domains allowed to request tokens (e.g., ["acme.com", "partner.org"]). */
   allowedDomains: string[];
   /** Constellation identifier (e.g., "dla-piee"). */
   constellationId: string;
   /** Animator service URL for twin provisioning. */
   animatorUrl: string;
-  /** SES sender address (e.g., "identity@udt-credence.ai"). */
+  /** SES sender address (e.g., "identity@acme.com"). */
   sesFromAddress: string;
   /** SES sender display name (e.g., "DLA PIEE Digital Twin"). */
   sesFromName: string;
@@ -116,6 +116,12 @@ export interface IdPConfig {
   mfaPolicy: 'required' | 'optional' | 'off';
   /** Issuer name shown in authenticator apps (e.g., "DLA PIEE Digital Twin"). */
   mfaIssuer: string;
+  /**
+   * Support mailbox shown to users whose domain is rejected. Operators
+   * configure this per deployment (typically via `BANGAUTH_SUPPORT_EMAIL`).
+   * Empty string omits the contact line.
+   */
+  supportEmail: string;
 }
 
 // ─── Key Store ───────────────────────────────────────────────────────────────
@@ -158,7 +164,8 @@ export interface ApiResponse {
 /**
  * Parameters for sending a rejection email to an unauthorized user.
  * // Why: When someone tries to request a token but their domain isn't allowed,
- * // we send a helpful email pointing them to auth-support@udt-credence.ai.
+ * // we send a helpful email pointing them to a deployment-specific support
+ * // address (configured by the operator).
  */
 export interface SendRejectionEmailParams {
   /** Recipient email address. */
@@ -169,6 +176,12 @@ export interface SendRejectionEmailParams {
   fromName: string;
   /** Human-readable constellation name. */
   constellationName: string;
+  /**
+   * Support mailbox the rejection email points the user at for manual
+   * vetting. Operators set this per deployment (e.g. via the
+   * `BANGAUTH_SUPPORT_EMAIL` environment variable).
+   */
+  supportEmail: string;
 }
 
 // ─── MFA Types ───────────────────────────────────────────────────────────────

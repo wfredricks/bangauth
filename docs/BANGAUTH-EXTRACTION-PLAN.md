@@ -26,10 +26,10 @@ values go into a YAML config file. The code becomes reusable on any project.
 
 | Current (hardcoded) | YAML config key | Description |
 |---------------------|-----------------|-------------|
-| `udt-credence.ai` | `deployment.domain` | Custom domain |
+| `<your-domain>` | `deployment.domain` | Custom domain (e.g. `auth.acme.com`) |
 | `twinsmith.ai` | `email.sesDomain` | SES domain for inbound email |
 | `us-east-1` | `deployment.region` | AWS region |
-| `230152865130` | (derived from AWS auth) | AWS account ID |
+| `<your-aws-account-id>` | (derived from AWS auth) | AWS account ID (use whatever the CDK CLI picks up from your profile) |
 
 ---
 

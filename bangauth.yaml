@@ -17,7 +17,7 @@ app:
 # Authentication settings
 auth:
   # Allowed email domains — use '*' to allow any domain (dev mode)
-  # In production, specify exact domains: ['dla.mil', 'credence-llc.com']
+  # In production, specify exact domains: ['acme.com', 'partner.org']
   allowedDomains:
     - '*'
 

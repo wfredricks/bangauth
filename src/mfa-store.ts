@@ -23,6 +23,7 @@ import {
   DeleteSecretCommand,
 } from '@aws-sdk/client-secrets-manager';
 import type { MfaEnrollment } from './types.js';
+import { ssmPrefix } from './config.js';
 
 // Why: Module-level singleton — reused across warm Lambda invocations.
 const secrets = new SecretsManagerClient({});
@@ -43,7 +44,7 @@ function mfaSecretPath(email: string): string {
   const emailHash = createHash('sha256')
     .update(email.toLowerCase().trim())
     .digest('hex');
-  return `/udt/idp/mfa/${emailHash}`;
+  return `${ssmPrefix()}mfa/${emailHash}`;
 }
 
 // ─── Store Functions ─────────────────────────────────────────────────────────

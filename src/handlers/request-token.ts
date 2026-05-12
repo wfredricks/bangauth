@@ -114,13 +114,14 @@ export async function handler(
     if (!isDomainAllowed(email, config.allowedDomains)) {
       // Why: Send a helpful rejection email so the user knows what to do.
       // Don't just show an error page — they might not understand why.
-      // Point them to auth-support@udt-credence.ai for manual vetting.
+      // Point them to the deployment's configured support mailbox.
       try {
         await sendRejectionEmail({
           to: email,
           fromAddress: config.sesFromAddress,
           fromName: config.sesFromName,
           constellationName: config.constellationId,
+          supportEmail: config.supportEmail,
         });
       } catch (emailErr) {
         // Why: If we can't send the rejection email (e.g., SES sandbox limits),

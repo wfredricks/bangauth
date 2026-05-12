@@ -131,6 +131,7 @@ app.post('/auth/request-code', async (c) => {
         fromAddress: 'noreply@bangauth.dev',
         fromName: config.appName,
         constellationName: config.appName,
+        supportEmail: process.env.BANGAUTH_SUPPORT_EMAIL || '',
       });
       return c.json({ error: 'Email domain not authorized' }, 403);
     }

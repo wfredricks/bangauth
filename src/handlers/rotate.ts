@@ -19,7 +19,7 @@ import {
   CreateSecretCommand,
 } from '@aws-sdk/client-secrets-manager';
 import { SSMClient, PutParameterCommand } from '@aws-sdk/client-ssm';
-import { loadConfig } from '../config.js';
+import { loadConfig, ssmPrefix, secretsPrefix } from '../config.js';
 import { generateToken } from '../token.js';
 import { sendTokenEmail } from '../email.js';
 import type { SigningKey } from '../types.js';
@@ -146,17 +146,17 @@ export async function handler(
   try {
     await secretsManager.send(
       new CreateSecretCommand({
-        Name: `/udt/idp/keys/${kid}`,
-        Description: `UDT IdP signing key for ${month}`,
+        Name: `${secretsPrefix()}${kid}`,
+        Description: `BangAuth signing key for ${month}`,
         SecretString: JSON.stringify(newKey),
       }),
     );
-    console.log(`Created secret /udt/idp/keys/${kid}`);
+    console.log(`Created secret ${secretsPrefix()}${kid}`);
   } catch (err: unknown) {
     // Why: If the secret already exists, it might be a re-run of the same month.
     // Log and continue — the key is already there.
     if (err instanceof Error && err.name === 'ResourceExistsException') {
-      console.warn(`Secret /udt/idp/keys/${kid} already exists — skipping creation`);
+      console.warn(`Secret ${secretsPrefix()}${kid} already exists — skipping creation`);
     } else {
       throw err;
     }
@@ -165,13 +165,13 @@ export async function handler(
   // Step 3: Update SSM current key pointer
   await ssm.send(
     new PutParameterCommand({
-      Name: '/udt/idp/currentKid',
+      Name: `${ssmPrefix()}currentKid`,
       Value: kid,
       Type: 'String',
       Overwrite: true,
     }),
   );
-  console.log(`Updated /udt/idp/currentKid to ${kid}`);
+  console.log(`Updated ${ssmPrefix()}currentKid to ${kid}`);
 
   // Step 4: Re-issue tokens to active twins
   const config = await loadConfig();

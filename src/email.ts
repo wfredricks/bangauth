@@ -209,8 +209,12 @@ export function buildTokenEmail(params: SendTokenEmailParams): {
  *
  * // Why: Rather than just showing an error on screen, send a helpful email
  * // explaining that their domain isn't authorized and directing them to
- * // auth-support@udt-credence.ai for manual vetting. This is better UX
- * // and provides an audit trail of access requests.
+ * // a deployment-specific support address for manual vetting. This is
+ * // better UX than a bare error screen and provides an audit trail of
+ * // access requests.
+ *
+ * // The support mailbox is passed in via `params.supportEmail` (operators
+ * // configure it per deployment, typically via `BANGAUTH_SUPPORT_EMAIL`).
  */
 export async function sendRejectionEmail(params: SendRejectionEmailParams): Promise<void> {
   const subject = `${params.constellationName} — Access Request`;
@@ -293,7 +297,7 @@ export async function sendRejectionEmail(params: SendRejectionEmailParams): Prom
     </p>
 
     <div class="contact-block">
-      <a href="mailto:auth-support@udt-credence.ai">auth-support@udt-credence.ai</a>
+      <a href="mailto:${params.supportEmail}">${params.supportEmail}</a>
     </div>
 
     <p class="info" style="font-size: 13px;">
